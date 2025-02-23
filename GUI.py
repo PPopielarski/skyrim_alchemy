@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk
 
 import Controller
-import DataSource
 
 
 class GUI:
@@ -37,7 +36,7 @@ class GUI:
         self.data_source = data_source
         self.window = tk.Tk()
         self.window.title("Alchemia w Skyrim")
-        self.window.iconbitmap(default="empty_logo.ico")
+        #self.window.iconbitmap(default="empty_logo.ico")
         self.window.resizable(True, False)
 
         self.entry_checkbox_frame = tk.Frame(master=self.window)
