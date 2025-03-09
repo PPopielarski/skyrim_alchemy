@@ -1,0 +1,112 @@
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QTableView, QStyledItemDelegate, QSpinBox
+from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex
+
+class IngredientTableModel(QAbstractTableModel):
+    def __init__(self, ingredients=None):
+        super().__init__()
+        self.ingredients = ingredients or []
+
+    def rowCount(self, parent=None):
+        return len(self.ingredients)
+
+    def columnCount(self, parent=None):
+        return 2
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        row, col = index.row(), index.column()
+
+        if role == Qt.DisplayRole:
+            if col == 0:
+                return self.ingredients[row]["name"]
+            elif col == 1:
+                return self.ingredients[row]["count"]
+
+        if role == Qt.UserRole:
+            if col == 1:
+                return self.ingredients[row]["count"]
+
+        return None
+
+    def setData(self, index, value, role):
+        if role == Qt.EditRole and index.column() == 1:
+            self.ingredients[index.row()]["count"] = value
+            self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.UserRole])
+            return True
+        return False
+
+    def flags(self, index):
+        """Umożliwia edycję tylko drugiej kolumny"""
+        if index.column() == 1:
+            return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable  # Dodano Qt.ItemIsEditable dla 1 kolumny
+
+    def headerData(self, section, orientation, role):
+        """Dodaje nagłówki do tabeli"""
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return ["Składnik", "Ilość"][section]
+        return None
+
+# ======== Delegat (obsługuje QSpinBox w drugiej kolumnie) ========
+class SpinBoxDelegate(QStyledItemDelegate):
+    def createEditor(self, parent, option, index):
+        """Tworzy edytor dla drugiej kolumny (QSpinBox)"""
+        if index.column() == 1:
+            spinbox = QSpinBox(parent)
+            spinbox.setMinimum(0)
+            spinbox.setMaximum(100)
+            return spinbox
+        return super().createEditor(parent, option, index)
+
+    def setEditorData(self, editor, index):
+        """Ustawia początkową wartość w QSpinBox"""
+        if index.column() == 1:
+            value = index.model().data(index, Qt.UserRole)
+            editor.setValue(value)
+
+    def setModelData(self, editor, model, index):
+        """Zapisuje wartość z QSpinBox do modelu"""
+        if index.column() == 1:
+            model.setData(index, editor.value(), Qt.EditRole)
+
+# ======== Główne okno aplikacji ========
+class IngredientTable(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.layout = QVBoxLayout(self)
+
+        self.model = IngredientTableModel([
+            {"name": "Mąka", "count": 0},
+            {"name": "Cukier", "count": 0},
+            {"name": "Jajka", "count": 0},
+            {"name": "Masło", "count": 0},
+        ])
+
+        self.table_view = QTableView()
+        self.table_view.setModel(self.model)
+
+        # Delegat dla QSpinBox w drugiej kolumnie
+        self.table_view.setItemDelegateForColumn(1, SpinBoxDelegate())
+
+        # Automatyczne dopasowanie szerokości kolumn
+        self.table_view.horizontalHeader().setStretchLastSection(True)
+
+        # Obsługa kliknięcia w pierwszą kolumnę (zwiększa licznik)
+        self.table_view.clicked.connect(self.handle_item_click)
+
+        self.layout.addWidget(self.table_view)
+
+    def handle_item_click(self, index):
+        if index.column() == 0:
+            count_index = self.model.index(index.row(), 1)
+            current_value = self.model.data(count_index, Qt.UserRole)
+            self.model.setData(count_index, current_value + 1, Qt.EditRole)
+
+if __name__ == "__main__":
+    app = QApplication([])
+    window = IngredientTable()
+    window.show()
+    app.exec()
