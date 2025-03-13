@@ -1,7 +1,7 @@
 ToDo: 
 
 1. Change GUI from Tkinter to PySide6.
-2. Add ability to remember settings, e.g. pinned table items, counts of ingredients or previously translation.
+2. Add ability to remember settings, e.g. pinned table items, counts of ingredients or previously selected translation.
 3. Add translations and translation engine.
 
 Future:
