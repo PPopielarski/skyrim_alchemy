@@ -27,3 +27,12 @@ class DataHandler:
 
             self.ingredients_set = {ingredient for ingredients in self.alchemy_effects_to_ingredients_dict.values()
                                     for ingredient in ingredients}
+
+        self.ingredients_to_alchemy_effects_dict = {}
+        for effect, ingredients in self.alchemy_effects_to_ingredients_dict.items():
+            for ingredient in ingredients:
+                self.ingredients_to_alchemy_effects_dict.setdefault(ingredient, set()).add(effect)
+
+if __name__ == '__main__':
+    dh = DataHandler()
+    print(dh.ingredients_to_alchemy_effects_dict)
