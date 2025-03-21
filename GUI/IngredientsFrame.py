@@ -101,6 +101,7 @@ class SpinBoxDelegate(QStyledItemDelegate):
             spinbox = QSpinBox(parent)
             spinbox.setMinimum(0)
             spinbox.setMaximum(1000000)
+            spinbox.setAlignment(Qt.AlignCenter)
             return spinbox
         return super().createEditor(parent, option, index)
 
@@ -112,6 +113,10 @@ class SpinBoxDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
         if index.column() == 1:
             model.setData(index, editor.value(), Qt.EditRole)
+
+    def paint(self, painter, option, index):
+        option.displayAlignment = Qt.AlignCenter
+        super().paint(painter, option, index)
 
 class IngredientTableView(QTableView):
     def __init__(self, model):
@@ -127,6 +132,8 @@ class IngredientTableView(QTableView):
         three_digit_string_width = QFontMetrics(self.font()).horizontalAdvance("999") + 20
         self.setColumnWidth(1, three_digit_string_width)
         self.total_width = max_ingredient_string_width + three_digit_string_width + 50
+        self.resizeRowsToContents()
+        self.setToolTip("LMB: increases value.\nRMB: decreases value.\nMMB: pins the row.\nDouble LMB on the counter: enables editing via keyboard or mouse scroll wheel.")
 
     def mousePressEvent(self, event):
         index = self.indexAt(event.position().toPoint())
@@ -153,9 +160,9 @@ class IngredientTableView(QTableView):
 
 class IngredientTableFrame(QWidget):
 
-    def __init__(self):
+    def __init__(self, data_handler = DataHandler(), *, width = None , height = None):
         super().__init__()
-        self.data_handler = DataHandler()
+        self.data_handler = data_handler
         self.pinned_rows_list = []
         input_data = [[ingredient, 0] for ingredient in sorted(self.data_handler.ingredients_set)]
         self.model = IngredientsTableModel(input_data, self.pinned_rows_list)
@@ -174,7 +181,10 @@ class IngredientTableFrame(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.search_box)
         layout.addWidget(self.table)
-        self.resize(self.table.total_width, QApplication.primaryScreen().availableGeometry().height())
+
+        width = width if width else self.table.total_width
+        height = height if height else QApplication.primaryScreen().availableGeometry().height()-50
+        self.resize(width, height)
         self.setLayout(layout)
 
     def get_owned_ingredients_dict(self) -> dict:
